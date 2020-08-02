@@ -1,6 +1,7 @@
 package com.example.whatsapp;
 
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -46,7 +47,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     private List<Messages> userMessagesList;
     private FirebaseAuth mAuth;
     private DatabaseReference UsersRef, Rootref;
-    private String Id,msg,category;
+    private String Id,msg,category,lat,log;
 
     public MessageAdapter(List<Messages> userMessagesList){
         this.userMessagesList = userMessagesList;
@@ -430,9 +431,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                                     "Cancel",
                                     "Send Details to Cyber Crime",
                                     "Sender Details",
-                                    "Initial Sender Details",
-                                    "Sender Location",
-                                    "Initial Sender Location"
+                                    "Initial Sender Details"
                             };
 
                             AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
@@ -463,6 +462,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                                     }
 
+
                                 }
                             });
                             builder.show();
@@ -475,9 +475,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                                     "Cancel",
                                     "Send details to Cyber Crime",
                                     "Sender Details",
-                                    "Initial Sender Details",
-                                    "Sender Location",
-                                    "Initial Sender Location"
+                                    "Initial Sender Details"
                             };
 
                             AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
