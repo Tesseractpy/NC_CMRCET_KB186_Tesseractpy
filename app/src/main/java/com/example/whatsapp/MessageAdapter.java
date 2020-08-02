@@ -478,6 +478,21 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                                         blockedMessageInfoMap.put("category",messages.getCategory());
                                         ReportedMessageKeyRef.updateChildren(blockedMessageInfoMap);
                                     }
+                                    else if(messages.getCategory().equals("forward")){
+                                        DatabaseReference ReportedMessageKeyRef = Rootref.child("ReportedMessages").child("liZlAZoGZ4dWQ3ripkMVZxiY0uB2").child(messageSenderID).child(messages.getMessageID());
+                                        HashMap<String, Object> blockedMessageInfoMap = new HashMap<>();
+                                        blockedMessageInfoMap.put("initialSender",messages.getInitialSender());
+                                        blockedMessageInfoMap.put("from",messages.getFrom());
+                                        blockedMessageInfoMap.put("to",messages.getTo());
+                                        blockedMessageInfoMap.put("message",messages.getMessage());
+                                        blockedMessageInfoMap.put("messageID",messages.getMessageID());
+                                        blockedMessageInfoMap.put("date",messages.getDate());
+                                        blockedMessageInfoMap.put("time",messages.getTime());
+                                        blockedMessageInfoMap.put("type",messages.getType());
+                                        blockedMessageInfoMap.put("category",messages.getCategory());
+                                        ReportedMessageKeyRef.updateChildren(blockedMessageInfoMap);
+                                    }
+
                                 }
 
                             }
