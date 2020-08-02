@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.util.Log;
@@ -24,7 +25,18 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -116,6 +128,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 messageViewHolder.receiverMessageText.setBackgroundResource(R.drawable.receiver_messages_layout);
                 messageViewHolder.receiverMessageText.setTextColor(Color.BLACK);
                 messageViewHolder.receiverMessageText.setText(messages.getMessage() + "\n \n" + messages.getTime() + " - " + messages.getDate());
+
 
             }
 
@@ -298,84 +311,195 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (userMessagesList.get(position).getType().equals("pdf") || userMessagesList.get(position).getType().equals("audio")){
-                        CharSequence options[] = new CharSequence[]{
-                                "Delete for me",
-                                "Download and View this file",
-                                "Cancel",
-                                "Send Details to Cyber Crime"
-                        };
 
-                        AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
-                        builder.setTitle("Delete Message?");
+                    if (userMessagesList.get(position).getCondition().equals("Blocked"))
+                    {
+                        if (userMessagesList.get(position).getType().equals("pdf") || userMessagesList.get(position).getType().equals("audio")){
+                            CharSequence options[] = new CharSequence[]{
+                                    "Delete for me",
+                                    "Download and View this file",
+                                    "Cancel",
+                                    "Send Details to Cyber Crime"
+                            };
 
-                        builder.setItems(options, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int i) {
-                                if (i == 0){
-                                    deleteReceiveMessage(position, messageViewHolder);
-                                    Intent intent = new Intent(messageViewHolder.itemView.getContext(), MainActivity.class);
-                                    messageViewHolder.itemView.getContext().startActivity(intent);
+                            AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
+                            builder.setTitle("Delete Message?");
+
+                            builder.setItems(options, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int i) {
+                                    if (i == 0){
+                                        deleteReceiveMessage(position, messageViewHolder);
+                                        Intent intent = new Intent(messageViewHolder.itemView.getContext(), MainActivity.class);
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
+                                    else if(i == 1){
+                                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(userMessagesList.get(position).getMessage()));
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
                                 }
-                                else if(i == 1){
-                                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(userMessagesList.get(position).getMessage()));
-                                    messageViewHolder.itemView.getContext().startActivity(intent);
+                            });
+                            builder.show();
+                        }
+                        else if (userMessagesList.get(position).getType().equals("text")){
+                            CharSequence options[] = new CharSequence[]{
+                                    "Delete for me",
+                                    "Cancel",
+                                    "Send Details to Cyber Crime"
+                            };
+
+                            AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
+                            builder.setTitle("Delete Message?");
+
+                            builder.setItems(options, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int i) {
+                                    if (i == 0){
+                                        deleteReceiveMessage(position, messageViewHolder);
+                                        Intent intent = new Intent(messageViewHolder.itemView.getContext(), MainActivity.class);
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
+
                                 }
-                            }
-                        });
-                        builder.show();
+                            });
+                            builder.show();
+                        }
+
+                        else if (userMessagesList.get(position).getType().equals("image")){
+                            CharSequence options[] = new CharSequence[]{
+                                    "Delete for me",
+                                    "View This Image",
+                                    "Cancel",
+                                    "Send details to Cyber Crime"
+                            };
+
+                            AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
+                            builder.setTitle("Delete Message?");
+
+                            builder.setItems(options, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int i) {
+                                    if (i == 0){
+                                        deleteReceiveMessage(position, messageViewHolder);
+                                        Intent intent = new Intent(messageViewHolder.itemView.getContext(), MainActivity.class);
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
+                                    else if(i == 1){
+                                        Intent intent = new Intent(messageViewHolder.itemView.getContext(), ImageViewerActivity.class);
+                                        intent.putExtra("url", userMessagesList.get(position).getMessage());
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
+                                }
+                            });
+                            builder.show();
+                        }
                     }
-                    else if (userMessagesList.get(position).getType().equals("text")){
-                        CharSequence options[] = new CharSequence[]{
-                                "Delete for me",
-                                "Cancel",
-                                "Send Details to Cyber Crime"
-                        };
+                    else if (userMessagesList.get(position).getCondition().equals("Reported"))
+                    {
+                        if (userMessagesList.get(position).getType().equals("pdf") || userMessagesList.get(position).getType().equals("audio")){
+                            CharSequence options[] = new CharSequence[]{
+                                    "Delete for me",
+                                    "Download and View this file",
+                                    "Cancel",
+                                    "Send Details to Cyber Crime",
+                                    "Sender Details"
+                            };
 
-                        AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
-                        builder.setTitle("Delete Message?");
+                            AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
+                            builder.setTitle("Delete Message?");
 
-                        builder.setItems(options, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int i) {
-                                if (i == 0){
-                                    deleteReceiveMessage(position, messageViewHolder);
-                                    Intent intent = new Intent(messageViewHolder.itemView.getContext(), MainActivity.class);
-                                    messageViewHolder.itemView.getContext().startActivity(intent);
+                            builder.setItems(options, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int i) {
+                                    if (i == 0){
+                                        deleteReceiveMessage(position, messageViewHolder);
+                                        Intent intent = new Intent(messageViewHolder.itemView.getContext(), MainActivity.class);
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
+                                    else if(i == 1){
+                                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(userMessagesList.get(position).getMessage()));
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
                                 }
+                            });
+                            builder.show();
+                        }
+                        else if (userMessagesList.get(position).getType().equals("text")){
+                            CharSequence options[] = new CharSequence[]{
+                                    "Delete for me",
+                                    "Cancel",
+                                    "Send Details to Cyber Crime",
+                                    "Sender Details",
+                                    "Initial Sender Details",
+                                    "Sender Location",
+                                    "Initial Sender Location"
+                            };
 
-                            }
-                        });
-                        builder.show();
-                    }
+                            AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
+                            builder.setTitle("Delete Message?");
 
-                    else if (userMessagesList.get(position).getType().equals("image")){
-                        CharSequence options[] = new CharSequence[]{
-                                "Delete for me",
-                                "View This Image",
-                                "Cancel",
-                                "Send details to Cyber Crime"
-                        };
+                            builder.setItems(options, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int i) {
+                                    if (i == 0){
+                                        deleteReceiveMessage(position, messageViewHolder);
+                                        Intent intent = new Intent(messageViewHolder.itemView.getContext(), MainActivity.class);
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
+                                    else if (i == 3)
+                                    {
+                                        Intent intent = new Intent(messageViewHolder.itemView.getContext(), ProfileActivity.class);
+                                        intent.putExtra("messageReceiverID",messages.getFrom());
+                                        intent.putExtra("from", "AdminActivity");
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
 
-                        AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
-                        builder.setTitle("Delete Message?");
+                                    }
+                                    else if (i == 4)
+                                    {
+                                        Intent intent = new Intent(messageViewHolder.itemView.getContext(), ProfileActivity.class);
+                                        intent.putExtra("messageReceiverID",messages.getInitialSender());
+                                        intent.putExtra("from", "AdminActivity");
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
 
-                        builder.setItems(options, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int i) {
-                                if (i == 0){
-                                    deleteReceiveMessage(position, messageViewHolder);
-                                    Intent intent = new Intent(messageViewHolder.itemView.getContext(), MainActivity.class);
-                                    messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
+
                                 }
-                                else if(i == 1){
-                                    Intent intent = new Intent(messageViewHolder.itemView.getContext(), ImageViewerActivity.class);
-                                    intent.putExtra("url", userMessagesList.get(position).getMessage());
-                                    messageViewHolder.itemView.getContext().startActivity(intent);
+                            });
+                            builder.show();
+                        }
+
+                        else if (userMessagesList.get(position).getType().equals("image")){
+                            CharSequence options[] = new CharSequence[]{
+                                    "Delete for me",
+                                    "View This Image",
+                                    "Cancel",
+                                    "Send details to Cyber Crime",
+                                    "Sender Details",
+                                    "Initial Sender Details",
+                                    "Sender Location",
+                                    "Initial Sender Location"
+                            };
+
+                            AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
+                            builder.setTitle("Delete Message?");
+
+                            builder.setItems(options, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int i) {
+                                    if (i == 0){
+                                        deleteReceiveMessage(position, messageViewHolder);
+                                        Intent intent = new Intent(messageViewHolder.itemView.getContext(), MainActivity.class);
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
+                                    else if(i == 1){
+                                        Intent intent = new Intent(messageViewHolder.itemView.getContext(), ImageViewerActivity.class);
+                                        intent.putExtra("url", userMessagesList.get(position).getMessage());
+                                        messageViewHolder.itemView.getContext().startActivity(intent);
+                                    }
                                 }
-                            }
-                        });
-                        builder.show();
+                            });
+                            builder.show();
+                        }
                     }
                 }
             });
@@ -452,7 +576,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                                     }
                                     else if (category.equals("forward"))
                                     {
-                                        String initialSender = userMessagesList.get(position).getInitialSender();
+                                        String initialSender = messages.getInitialSender();
                                         Intent intent = new Intent(messageViewHolder.itemView.getContext(), ForwardActivity.class);
                                         intent.putExtra("messageSenderID",initialSender);
                                         intent.putExtra("Id",Id);
@@ -461,12 +585,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                                         messageViewHolder.itemView.getContext().startActivity(intent);
                                     }
                                 }
+
                                 else if (i==3)
                                 {
 
                                     if (messages.getCategory().equals("direct")){
                                         DatabaseReference ReportedMessageKeyRef = Rootref.child("ReportedMessages").child("liZlAZoGZ4dWQ3ripkMVZxiY0uB2").child(messageSenderID).child(messages.getMessageID());
                                         HashMap<String, Object> blockedMessageInfoMap = new HashMap<>();
+                                        blockedMessageInfoMap.put("condition","Reported");
                                         blockedMessageInfoMap.put("initialSender",messages.getFrom());
                                         blockedMessageInfoMap.put("from",messages.getFrom());
                                         blockedMessageInfoMap.put("to",messages.getTo());
@@ -481,6 +607,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                                     else if(messages.getCategory().equals("forward")){
                                         DatabaseReference ReportedMessageKeyRef = Rootref.child("ReportedMessages").child("liZlAZoGZ4dWQ3ripkMVZxiY0uB2").child(messageSenderID).child(messages.getMessageID());
                                         HashMap<String, Object> blockedMessageInfoMap = new HashMap<>();
+                                        blockedMessageInfoMap.put("condition","Reported");
                                         blockedMessageInfoMap.put("initialSender",messages.getInitialSender());
                                         blockedMessageInfoMap.put("from",messages.getFrom());
                                         blockedMessageInfoMap.put("to",messages.getTo());
