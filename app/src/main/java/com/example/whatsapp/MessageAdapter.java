@@ -444,7 +444,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                                     if (category.equals("direct"))
                                     {
                                         Intent intent = new Intent(messageViewHolder.itemView.getContext(), ForwardActivity.class);
-                                        intent.putExtra("messageSenderID",messageSenderID);
+                                        intent.putExtra("messageSenderID",messages.getFrom());
                                         intent.putExtra("Id",Id);
                                         intent.putExtra("msg", msg);
                                         intent.putExtra("category", category);
