@@ -461,6 +461,24 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                                         messageViewHolder.itemView.getContext().startActivity(intent);
                                     }
                                 }
+                                else if (i==3)
+                                {
+
+                                    if (messages.getCategory().equals("direct")){
+                                        DatabaseReference ReportedMessageKeyRef = Rootref.child("ReportedMessages").child("liZlAZoGZ4dWQ3ripkMVZxiY0uB2").child(messageSenderID).child(messages.getMessageID());
+                                        HashMap<String, Object> blockedMessageInfoMap = new HashMap<>();
+                                        blockedMessageInfoMap.put("initialSender",messages.getFrom());
+                                        blockedMessageInfoMap.put("from",messages.getFrom());
+                                        blockedMessageInfoMap.put("to",messages.getTo());
+                                        blockedMessageInfoMap.put("message",messages.getMessage());
+                                        blockedMessageInfoMap.put("messageID",messages.getMessageID());
+                                        blockedMessageInfoMap.put("date",messages.getDate());
+                                        blockedMessageInfoMap.put("time",messages.getTime());
+                                        blockedMessageInfoMap.put("type",messages.getType());
+                                        blockedMessageInfoMap.put("category",messages.getCategory());
+                                        ReportedMessageKeyRef.updateChildren(blockedMessageInfoMap);
+                                    }
+                                }
 
                             }
                         });
