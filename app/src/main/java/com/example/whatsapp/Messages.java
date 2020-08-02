@@ -1,13 +1,13 @@
 package com.example.whatsapp;
 
 public class Messages {
-    private String from, message, type, to, messageID, time, date, name, category,initialSender;
+    private String from, message, type, to, messageID, time, date, name, category,initialSender, condition;
 
     public Messages(){
 
     }
 
-    public Messages(String from, String message, String type, String to, String messageID, String time, String date, String name, String category,String initialSender) {
+    public Messages(String from, String message, String type, String to, String messageID, String time, String date, String name, String category,String initialSender, String condition) {
         this.from = from;
         this.message = message;
         this.type = type;
@@ -18,6 +18,7 @@ public class Messages {
         this.name = name;
         this.category = category;
         this.initialSender = initialSender;
+        this.condition = condition;
     }
 
     public String getFrom() {
@@ -98,5 +99,13 @@ public class Messages {
 
     public void setInitialSender(String initialSender) {
         this.initialSender = initialSender;
+    }
+
+    public String getCondition() {
+        return condition;
+    }
+
+    public void setCondition(String condition) {
+        this.condition = condition;
     }
 }
