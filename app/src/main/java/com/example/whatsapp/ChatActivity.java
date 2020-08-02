@@ -86,9 +86,9 @@ import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
 public class ChatActivity extends AppCompatActivity {
 
-    private String messageReceiverID, messageReceiverName, messageReceiverImage, messageSenderID,msgID, prevSenderID,messageText, cat, msg,lat,log,retrieve = "";
+    private String messageReceiverID, messageReceiverName, messageReceiverImage, messageSenderID,msgID, prevSenderID, cat, msg,lat,log,retrieve = "";
 
-    private TextView userName, userLastSeen,RetrieveView;
+    private TextView userName, userLastSeen,RetrieveView,ForwardView;
     private CircleImageView userImage;
 
     private Toolbar ChatToolBar;
@@ -118,6 +118,7 @@ public class ChatActivity extends AppCompatActivity {
     private SpeechRecognizer speechRecognizer;
     private Intent speechRecognizerIntent;
     private String Keeper = "";
+    private ArrayList<String> stopwords = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -133,7 +134,11 @@ public class ChatActivity extends AppCompatActivity {
         RootRef = FirebaseDatabase.getInstance().getReference();
         BlockedMessageRef = FirebaseDatabase.getInstance().getReference().child("BlockedMessages").child("PrivateChats");
 
-        InitializeControllers();
+        try {
+            InitializeControllers();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         if(getIntent().getStringExtra("from").equals("ForwardFragment"))
         {
@@ -145,7 +150,13 @@ public class ChatActivity extends AppCompatActivity {
             msg = Objects.requireNonNull(getIntent().getExtras().get("msg")).toString();
             cat = Objects.requireNonNull(getIntent().getExtras().get("cat")).toString();
             Toast.makeText(this, msgID+"\n"+prevSenderID+"\n"+msg+"\n"+cat, Toast.LENGTH_SHORT).show();
-            ForwardMessage();
+            msg = msg.trim();
+            MessageInputText.setText(msg);
+            try {
+                ForwardMessage();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         else if(getIntent().getStringExtra("from").equals("ChatsFragment"))
         {
@@ -155,6 +166,30 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         else  if(getIntent().getStringExtra("from").equals("BlockedMessagesFragment")){
+            messageReceiverID = getIntent().getExtras().get("visit_user_id").toString();
+            messageReceiverName = getIntent().getExtras().get("visit_user_name").toString();
+            messageReceiverImage = getIntent().getExtras().get("visit_image").toString();
+
+            SendMessageButton.setVisibility(View.INVISIBLE);
+            SendFilesButton.setVisibility(View.INVISIBLE);
+            MessageInputText.setVisibility(View.INVISIBLE);
+            MessageInputVoice.setVisibility(View.INVISIBLE);
+            UserDetailsBtn.setVisibility(View.VISIBLE);
+            TraceUserBtn.setVisibility(View.VISIBLE);
+
+            UserDetailsBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent profileIntent = new Intent(ChatActivity.this,ProfileActivity.class);
+                    profileIntent.putExtra("messageReceiverID",messageReceiverID);
+                    profileIntent.putExtra("from", "AdminActivity");
+                    startActivity(profileIntent);
+
+                }
+            });
+        }
+
+        else  if(getIntent().getStringExtra("from").equals("ReportedMessagesFragment")){
             messageReceiverID = getIntent().getExtras().get("visit_user_id").toString();
             messageReceiverName = getIntent().getExtras().get("visit_user_name").toString();
             messageReceiverImage = getIntent().getExtras().get("visit_image").toString();
@@ -421,6 +456,39 @@ public class ChatActivity extends AppCompatActivity {
 
             }
         });
+
+        RootRef.child("ReportedMessages").child(messageSenderID).child(messageReceiverID).addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                Messages messages = dataSnapshot.getValue(Messages.class);
+
+                messagesList.add(messages);
+
+                messageAdapter.notifyDataSetChanged();
+
+                userMessagesList.smoothScrollToPosition(userMessagesList.getAdapter().getItemCount());
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
 
@@ -451,7 +519,7 @@ public class ChatActivity extends AppCompatActivity {
         client.unload();
     }
 
-    private void InitializeControllers() {
+    private void InitializeControllers() throws IOException {
         ChatToolBar = (Toolbar) findViewById(R.id.chat_toolbar);
         setSupportActionBar(ChatToolBar);
 
@@ -467,6 +535,7 @@ public class ChatActivity extends AppCompatActivity {
         userName = (TextView) findViewById(R.id.custom_profile_name);
         userLastSeen = (TextView) findViewById(R.id.custom_user_last_seen);
         RetrieveView = (TextView) findViewById(R.id.RetrieveView);
+        ForwardView = (TextView) findViewById(R.id.ForwardView);
 
         SendMessageButton = (ImageButton) findViewById(R.id.send_message_btn);
         SendFilesButton = (ImageButton) findViewById(R.id.send_files_btn);
@@ -481,6 +550,7 @@ public class ChatActivity extends AppCompatActivity {
         userMessagesList.setLayoutManager(linearLayoutManager);
         userMessagesList.setAdapter(messageAdapter);
 
+
         loadingBar = new ProgressDialog(this);
 
         Calendar calendar = Calendar.getInstance();
@@ -491,7 +561,23 @@ public class ChatActivity extends AppCompatActivity {
         SimpleDateFormat currentTime = new SimpleDateFormat("hh:mm a");
         saveCurrentTime = currentTime.format(calendar.getTime());
 
+        String line;
+
+        try {
+
+            InputStreamReader input;
+            InputStream inputStream = getAssets().open("output.txt");
+            input = new InputStreamReader(inputStream);
+            BufferedReader br = new BufferedReader(input);
+
+            while ((line = br.readLine()) != null) {
+                stopwords.add(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         getBlockKeywords();
+
 
     }
 
@@ -776,6 +862,7 @@ public class ChatActivity extends AppCompatActivity {
 
             BlockedMessageKeyRef = BlockedMessageRef.child("liZlAZoGZ4dWQ3ripkMVZxiY0uB2").child(messageSenderID).child(messagePushID);
             HashMap<String, Object> blockedMessageInfoMap = new HashMap<>();
+            blockedMessageInfoMap.put("condition","Blocked");
             blockedMessageInfoMap.put("from",messageSenderID);
             blockedMessageInfoMap.put("to",messageReceiverID);
             blockedMessageInfoMap.put("message",messageText);
@@ -842,9 +929,107 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
-    private void ForwardMessage()
-    {
+    private void ForwardMessage() throws IOException {
+        /**
+         String msgText = MessageInputText.getText().toString();
+         msgText = msgText.trim();
+         String SentResult = classify(msgText);
+         if (TextUtils.isEmpty(msgText)){
+         Toast.makeText(this, "Message can not be empty..", Toast.LENGTH_SHORT).show();
+         }
+         else if (SentResult.equalsIgnoreCase("The message cannot be transmitted.")){
+         String messageSenderRef = "Message/" + messageSenderID + "/" + messageReceiverID;
+         String messageReceiverRef = "Message/" + messageReceiverID + "/" + messageSenderID;
 
+         DatabaseReference userMessageKeyRef = RootRef.child("Message").child(messageSenderID).child(messageReceiverID).push();
+
+         String messagePushID = userMessageKeyRef.getKey();
+
+         Map messageTextBody = new HashMap();
+         messageTextBody.put("message", "The message block due to disputing content");
+         messageTextBody.put("type", "text");
+         messageTextBody.put("from", messageSenderID);
+         messageTextBody.put("to", messageReceiverID);
+         messageTextBody.put("messageID", messagePushID);
+         messageTextBody.put("time", saveCurrentTime);
+         messageTextBody.put("date", saveCurrentDate);
+         messageTextBody.put("category","forward");
+         messageTextBody.put("initialSender",prevSenderID);
+
+
+
+         BlockedMessageKeyRef = BlockedMessageRef.child("liZlAZoGZ4dWQ3ripkMVZxiY0uB2").child(messageSenderID).child(messagePushID);
+         HashMap<String, Object> blockedMessageInfoMap = new HashMap<>();
+         blockedMessageInfoMap.put("from",messageSenderID);
+         blockedMessageInfoMap.put("to",messageReceiverID);
+         blockedMessageInfoMap.put("message",msgText);
+         blockedMessageInfoMap.put("messageID",messagePushID);
+         blockedMessageInfoMap.put("date",saveCurrentDate);
+         blockedMessageInfoMap.put("time",saveCurrentTime);
+         blockedMessageInfoMap.put("type","text");
+         blockedMessageInfoMap.put("category","forward");
+         messageTextBody.put("initialSender",prevSenderID);
+         BlockedMessageKeyRef.updateChildren(blockedMessageInfoMap);
+
+
+         Map messageBodyDetails = new HashMap();
+         messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
+         messageBodyDetails.put(messageReceiverRef + "/" + messagePushID, messageTextBody);
+
+         RootRef.updateChildren(messageBodyDetails).addOnCompleteListener(new OnCompleteListener() {
+        @Override
+        public void onComplete(@NonNull Task task) {
+        if (task.isSuccessful()){
+        Toast.makeText(ChatActivity.this, "Message Sent Successfully", Toast.LENGTH_SHORT).show();
+        }
+        else {
+        Toast.makeText(ChatActivity.this, "Error", Toast.LENGTH_SHORT).show();
+        }
+        MessageInputText.setText("");
+        }
+        });
+         }
+         else {
+         extractKeywords(msgText);
+         String messageSenderRef = "Message/" + messageSenderID + "/" + messageReceiverID;
+         String messageReceiverRef = "Message/" + messageReceiverID + "/" + messageSenderID;
+
+         DatabaseReference userMessageKeyRef = RootRef.child("Message").child(messageSenderID).child(messageReceiverID).push();
+
+         String messagePushID = userMessageKeyRef.getKey();
+
+         Map messageTextBody = new HashMap();
+         messageTextBody.put("message", msgText);
+         messageTextBody.put("type", "text");
+         messageTextBody.put("from", messageSenderID);
+         messageTextBody.put("to", messageReceiverID);
+         messageTextBody.put("messageID", messagePushID);
+         messageTextBody.put("time", saveCurrentTime);
+         messageTextBody.put("date", saveCurrentDate);
+         messageTextBody.put("category","forward");
+         messageTextBody.put("initialSender",prevSenderID);
+
+
+         Map messageBodyDetails = new HashMap();
+         messageBodyDetails.put(messageSenderRef + "/" + messagePushID, messageTextBody);
+         messageBodyDetails.put(messageReceiverRef + "/" + messagePushID, messageTextBody);
+
+         RootRef.updateChildren(messageBodyDetails).addOnCompleteListener(new OnCompleteListener() {
+        @Override
+        public void onComplete(@NonNull Task task) {
+        if (task.isSuccessful()){
+        Toast.makeText(ChatActivity.this, "Message Sent Successfully", Toast.LENGTH_SHORT).show();
+        }
+        else {
+        Toast.makeText(ChatActivity.this, "Error", Toast.LENGTH_SHORT).show();
+        }
+        MessageInputText.setText("");
+        }
+        });
+         }
+
+
+         **/
         String messageSenderRef = "Message/" + messageSenderID + "/" + messageReceiverID;
         String messageReceiverRef = "Message/" + messageReceiverID + "/" + messageSenderID;
 
@@ -880,9 +1065,8 @@ public class ChatActivity extends AppCompatActivity {
                 MessageInputText.setText("");
             }
         });
+
     }
-
-
 
     /** Send input text to TextClassificationClient and get the classify messages. */
     private String classify(final String text) {
@@ -930,25 +1114,14 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void extractKeywords(String text) throws IOException {
+
+        // Run text classification with TF Lite.
         List<TextClassificationClient.Result> results = client.classify(text);
 
         String resultSentiment = String.format(results.get(0).getTitle());
-        if (resultSentiment.equals("Negative")) {
-
-            ArrayList<String> stopwords = new ArrayList<>();
-            String line;
-
-            try {
-
-                InputStreamReader input;
-                InputStream inputStream = getAssets().open("output.txt");
-                input = new InputStreamReader(inputStream);
-                BufferedReader br = new BufferedReader(input);
-
-                while ((line = br.readLine()) != null) {
-                    stopwords.add(line);
-                }
-
+        if (resultSentiment.equals("Negative"))
+        {
+            try{
                 String input_str = text.toLowerCase();
                 input_str = input_str.replaceAll(Arrays.toString(new String[]{"\\p{Punct}", "+", "=", "*", "#", "$", "~", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}), " ");
 
@@ -970,12 +1143,12 @@ public class ChatActivity extends AppCompatActivity {
                                 if (dataSnapshot.hasChild(keywordsArray[j])) {
                                     int count = Integer.parseInt(dataSnapshot.child(keywordsArray[j]).child("count").getValue().toString());
                                     count = count + 1;
-                                    if (count == 5) {
+                                    if(count==10){
                                         RootRef.child("BlockList").addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                String mid = ", " + keywordsArray[j];
-                                                String blockList = dataSnapshot.getValue().toString() + mid;
+                                                String mid = ", "+keywordsArray[j];
+                                                String blockList = dataSnapshot.getValue().toString()+mid;
                                                 RootRef.child("BlockList").setValue(blockList);
                                             }
 
@@ -985,11 +1158,13 @@ public class ChatActivity extends AppCompatActivity {
                                             }
                                         });
                                         RootRef.child("Keywords").child(keywordsArray[j]).child("count").setValue(count);
-                                    } else {
+                                    }
+                                    else {
                                         RootRef.child("Keywords").child(keywordsArray[j]).child("count").setValue(count);
                                     }
 
-                                } else {
+                                }
+                                else {
                                     RootRef.child("Keywords").child(keywordsArray[j]).child("count").setValue(1);
                                 }
                             }
@@ -1004,10 +1179,87 @@ public class ChatActivity extends AppCompatActivity {
 
 
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
 
             }
         }
+
+        /***     ArrayList<String> stopwords = new ArrayList<>();
+         String line;
+
+         try {
+
+         InputStreamReader input;
+         InputStream inputStream = getAssets().open("output.txt");
+         input = new InputStreamReader(inputStream);
+         BufferedReader br = new BufferedReader(input);
+
+         while ((line = br.readLine()) != null) {
+         stopwords.add(line);
+         }
+
+         String input_str = text.toLowerCase();
+         input_str = input_str.replaceAll(Arrays.toString(new String[]{"\\p{Punct}", "+", "=", "*", "#", "$", "~", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}), " ");
+
+         ArrayList<String> allWords = Stream.of(input_str.split(" ")).collect(Collectors.toCollection(ArrayList<String>::new));
+         allWords.removeAll(stopwords);
+
+         String result = String.join(",", allWords);
+         String[] keywordsArray = result.split(",");
+
+         if (keywordsArray.length != 0) {
+         Toast.makeText(this, String.valueOf(keywordsArray.length), Toast.LENGTH_SHORT).show();
+         }
+         for (int i = 0; i < keywordsArray.length; i++) {
+         if (!keywordsArray[i].equals("")) {
+         int j = i;
+         RootRef.child("Keywords").addListenerForSingleValueEvent(new ValueEventListener() {
+        @Override
+        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        if (dataSnapshot.hasChild(keywordsArray[j])) {
+        int count = Integer.parseInt(dataSnapshot.child(keywordsArray[j]).child("count").getValue().toString());
+        count = count + 1;
+        if(count==10){
+        RootRef.child("BlockList").addListenerForSingleValueEvent(new ValueEventListener() {
+        @Override
+        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        String mid = ", "+keywordsArray[j];
+        String blockList = dataSnapshot.getValue().toString()+mid;
+        RootRef.child("BlockList").setValue(blockList);
+        }
+
+        @Override
+        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+        }
+        });
+        RootRef.child("Keywords").child(keywordsArray[j]).child("count").setValue(count);
+        }
+        else {
+        RootRef.child("Keywords").child(keywordsArray[j]).child("count").setValue(count);
+        }
+
+        }
+        else {
+        RootRef.child("Keywords").child(keywordsArray[j]).child("count").setValue(1);
+        }
+        }
+
+        @Override
+        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+        }
+        });
+
+         }
+
+
+         }
+         }
+         catch (Exception e) {
+
+         }***/
     }
 
 
