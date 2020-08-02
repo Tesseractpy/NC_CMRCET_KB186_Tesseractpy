@@ -28,10 +28,10 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ProfileActivity extends AppCompatActivity
 {
-    private String receiverUserID, senderUserID, Current_State;
+    private String receiverUserID, senderUserID, Current_State,lat,log;
     private CircleImageView userProfileImage;
     private TextView userProfileName, userProfileStatus,userProfileIP;
-    private Button SendMessageRequestButton, DeclineMessageRequestButton;
+    private Button SendMessageRequestButton, DeclineMessageRequestButton,TrackUserLocation;
 
     private DatabaseReference UserRef, ChatRequestRef, ContactsRef, NotificationRef;
     private FirebaseAuth mAuth;
@@ -57,6 +57,7 @@ public class ProfileActivity extends AppCompatActivity
         userProfileIP = (TextView) findViewById(R.id.visit_profile_ip);
         SendMessageRequestButton = (Button) findViewById(R.id.send_message_request_button);
         DeclineMessageRequestButton = (Button) findViewById(R.id.decline_message_request_button);
+        TrackUserLocation = (Button) findViewById(R.id.location_button);
         Current_State = "new";
 
         if(getIntent().getStringExtra("from").equals("AdminActivity"))
@@ -66,6 +67,30 @@ public class ProfileActivity extends AppCompatActivity
             userProfileIP.setVisibility(View.VISIBLE);
             SendMessageRequestButton.setVisibility(View.INVISIBLE);
             DeclineMessageRequestButton.setVisibility(View.INVISIBLE);
+            TrackUserLocation.setVisibility(View.VISIBLE);
+            TrackUserLocation.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    UserRef.child(receiverUserID).child("userState").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if (dataSnapshot.hasChild("latitude")){
+                                lat = dataSnapshot.child("latitude").getValue().toString();
+                                log = dataSnapshot.child("longitude").getValue().toString();
+                                DisplayTrack(lat,log);
+                            }
+                            else{
+                                Toast.makeText(ProfileActivity.this, "The user location do not exists.", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+            });
 
         }
         else if(getIntent().getStringExtra("from").equals("FindFriendsActivity"))
@@ -75,6 +100,8 @@ public class ProfileActivity extends AppCompatActivity
         }
 
         RetrieveUserInfo();
+
+
     }
 
 
@@ -386,4 +413,22 @@ public class ProfileActivity extends AppCompatActivity
                     }
                 });
     }
+
+    private void DisplayTrack(String lat, String log) {
+        try {
+            Uri uri= Uri.parse(String.format("google.navigation:q=%s,%s",lat,log));
+            Intent mapIntent=new Intent(Intent.ACTION_VIEW,uri);
+            mapIntent.setPackage("com.google.android.apps.maps");
+            startActivity(mapIntent);
+        }
+        catch (ActivityNotFoundException e)
+        {
+            Uri uri =Uri.parse("https://play.google.com/store/apps/Detailed?id=com.google.android.apps.maps");
+            Intent intent=new Intent(Intent.ACTION_VIEW,uri);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }
+    }
+
+
 }
