@@ -421,7 +421,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                         CharSequence options[] = new CharSequence[]{
                                 "Delete for me",
                                 "Cancel",
-                                "Forward"
+                                "Forward",
+                                "Report"
                         };
 
                         AlertDialog.Builder builder = new AlertDialog.Builder(messageViewHolder.itemView.getContext());
