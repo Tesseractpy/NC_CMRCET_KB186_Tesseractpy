@@ -96,7 +96,7 @@ public class ChatActivity extends AppCompatActivity {
     private DatabaseReference RootRef, BlockedMessageRef, BlockedMessageKeyRef;
 
     private ImageButton SendMessageButton, SendFilesButton,MessageInputVoice;
-    private Button UserDetailsBtn, TraceUserBtn;
+    private Button UserDetailsBtn;
     private EditText MessageInputText;
 
     private final List<Messages> messagesList = new ArrayList<>();
@@ -175,7 +175,6 @@ public class ChatActivity extends AppCompatActivity {
             MessageInputText.setVisibility(View.INVISIBLE);
             MessageInputVoice.setVisibility(View.INVISIBLE);
             UserDetailsBtn.setVisibility(View.VISIBLE);
-            TraceUserBtn.setVisibility(View.VISIBLE);
 
             UserDetailsBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -199,7 +198,6 @@ public class ChatActivity extends AppCompatActivity {
             MessageInputText.setVisibility(View.INVISIBLE);
             MessageInputVoice.setVisibility(View.INVISIBLE);
             UserDetailsBtn.setVisibility(View.VISIBLE);
-            TraceUserBtn.setVisibility(View.VISIBLE);
 
             UserDetailsBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -228,29 +226,6 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
-        TraceUserBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                RootRef.child("Users").child(messageReceiverID).child("userState").addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        if (dataSnapshot.hasChild("latitude")){
-                            lat = dataSnapshot.child("latitude").getValue().toString();
-                            log = dataSnapshot.child("longitude").getValue().toString();
-                            DisplayTrack(lat,log);
-                        }
-                        else{
-                            Toast.makeText(ChatActivity.this, "The user location do not exists.", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
-            }
-        });
 
 
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(ChatActivity.this);
@@ -541,7 +516,6 @@ public class ChatActivity extends AppCompatActivity {
         SendFilesButton = (ImageButton) findViewById(R.id.send_files_btn);
         MessageInputVoice = (ImageButton) findViewById(R.id.voice_message_btn);
         UserDetailsBtn = (Button) findViewById(R.id.users_details_btn);
-        TraceUserBtn = (Button) findViewById(R.id.trace_btn);
         MessageInputText = (EditText) findViewById(R.id.input_message);
 
         messageAdapter = new MessageAdapter(messagesList);
