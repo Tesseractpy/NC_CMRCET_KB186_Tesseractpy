@@ -1,0 +1,1 @@
+Hm. for swear in jizz pussy faggot bitch ass asshole tubgirl; do grep -i $swear tweets.csv | wc -l; done 1 7 4 33 308 21 1
