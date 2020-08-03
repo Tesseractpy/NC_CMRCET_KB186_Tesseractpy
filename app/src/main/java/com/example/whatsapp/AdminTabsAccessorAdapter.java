@@ -23,10 +23,6 @@ public class AdminTabsAccessorAdapter extends FragmentPagerAdapter
                 BlockedMessagesFragment blockedMessagesFragment = new BlockedMessagesFragment();
                 return blockedMessagesFragment;
 
-            case 1:
-                ReportedMessagesFragment reportedMessagesFragment = new ReportedMessagesFragment();
-                return reportedMessagesFragment;
-
             default:
                 return null;
         }
@@ -35,7 +31,7 @@ public class AdminTabsAccessorAdapter extends FragmentPagerAdapter
 
     @Override
     public int getCount() {
-        return 2;
+        return 1;
     }
 
     @Nullable
@@ -46,10 +42,8 @@ public class AdminTabsAccessorAdapter extends FragmentPagerAdapter
         switch(position)
         {
             case 0:
-                return "Blocked Messages";
+                return "Blocked And Reported Messages";
 
-            case 1:
-                return "Reported Messages";
 
             default:
                 return null;
