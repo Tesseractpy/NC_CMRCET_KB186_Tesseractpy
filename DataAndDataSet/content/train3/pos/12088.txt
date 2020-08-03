@@ -1,0 +1,1 @@
+Only AAP can take ownership of a bureaucrat, others have no right for the same.

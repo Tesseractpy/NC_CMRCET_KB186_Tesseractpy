@@ -1,0 +1,1 @@
+Don't worry about tests, Ronald Bica's test cases cover your code too.
