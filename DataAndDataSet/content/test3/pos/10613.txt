@@ -1,0 +1,1 @@
+Point of interest: game will not close on its own, freezes on exit. Has to be killed in taskmanager every time.
